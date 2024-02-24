@@ -1,5 +1,33 @@
 #!/usr/bin/env bash
 
+# If you want to use an external wifi device, uncomment and set PWNY_EXT_WLAN to its
+# interface name Then put the monitor mode inteface name into /etc/pwnagotchi/config.toml
+# as  "main.iface".
+#
+#PWNY_EXT_WLAN='wlan0'
+
+# Pwnagotchi network interfaces
+export PWNY_WIFI_IFACE='wlan0'
+export PWNY_MON_IFACE='mon0'
+
+# look for monitor interface in config file
+for conf in /usr/local/lib/python3.11/dist-packages/pwnagotchi/defaults.toml \
+		/etc/pwnagotchi/config.toml; do
+    if grep -q main.iface $conf; then
+	mondev=$(grep main.iface $conf | cut -d \" -f2)
+	export PWNY_MON_IFACE=$mondev
+    fi
+done
+
+if [ "$PWNY_EXT_WLAN" != "" ]; then
+    export PWNY_WIFI_IFACE=$PWNY_EXT_WLAN
+else
+    # choose phy0 wifi device (typically built in)
+    wifidev=$(/sbin/iw dev | grep -A 7 phy\#0 | grep Interface | cut  -d ' ' -f2)
+    export PWNY_WIFI_IFACE=$wifidev
+fi
+
+
 # well ... it blinks the led
 blink_led() {
   # shellcheck disable=SC2034
